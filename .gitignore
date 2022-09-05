@@ -1,0 +1,7 @@
+node_modules
+build
+mir_build
+compile_flags.txt
+.vscode
+.history
+.DS_Store

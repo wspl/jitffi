@@ -1,0 +1,27 @@
+{
+  "name": "jitffi",
+  "version": "0.0.0",
+  "description": "a",
+  "main": "lib/index.ts",
+  "private": true,
+  "dependencies": {
+    "bindings": "^1.5.0",
+    "node-addon-api": "^5.0.0"
+  },
+  "scripts": {
+    "example": "ts-node examples/win32_window.ts",
+    "benchmark": "ts-node examples/benchmark.ts",
+    "demo": "node demo.js",
+    "test": "node hello.js"
+  },
+  "gypfile": true,
+  "devDependencies": {
+    "@tsconfig/node16": "^1.0.3",
+    "@types/bindings": "^1.5.1",
+    "@types/node": "^16.11.56",
+    "node-gyp": "^9.1.0",
+    "ts-node": "^10.9.1",
+    "tsx": "^3.8.2",
+    "typescript": "^4.7.4"
+  }
+}

@@ -1,0 +1,7 @@
+*.dll
+*.exp
+*.lib
+*.pdb
+*.ilk
+library
+*.dSYM
