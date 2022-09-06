@@ -1,5 +1,5 @@
 import bindings from 'bindings'
-import { StructCreator } from './struct'
+import { Struct, StructCreator } from './struct'
 const addon = bindings('jitffi')
 
 export enum CType {
@@ -43,3 +43,21 @@ export function sizeOf(type: NativeType) {
 }
 
 export const nullptr = Buffer.alloc(8)
+
+export interface TypeMap {
+  [CType.ptr]: Buffer,
+  [CType.u64]: bigint,
+  [CType.i64]: bigint,
+  [CType.u32]: number,
+  [CType.i32]: number,
+  [CType.u16]: number,
+  [CType.i16]: number,
+  [CType.u8]: number,
+  [CType.i8]: number,
+  [CType.f64]: number,
+  [CType.f32]: number,
+  [CType.void]: undefined
+}
+
+export type ExtractStructCreator<Type> = Type extends StructCreator<infer X> ? X : never
+export type NativeValue<T extends NativeType> = T extends CType ? TypeMap[T] : Struct<ExtractStructCreator<T>>

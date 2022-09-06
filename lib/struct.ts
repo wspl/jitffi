@@ -1,19 +1,4 @@
-import { CType, CTypeSize } from "./c_types"
-
-interface TypeMap {
-  [CType.ptr]: Buffer,
-  [CType.u64]: bigint,
-  [CType.i64]: bigint,
-  [CType.u32]: number,
-  [CType.i32]: number,
-  [CType.u16]: number,
-  [CType.i16]: number,
-  [CType.u8]: number,
-  [CType.i8]: number,
-  [CType.f64]: number,
-  [CType.f32]: number,
-  [CType.void]: undefined
-}
+import { CType, CTypeSize, NativeValue } from "./c_types"
 
 const getterSetterMap = {
   [CType.ptr]: (offset: number) => ({
@@ -133,8 +118,7 @@ const structGetterSetter = <T extends StructDeclareBase>(offset: number) => ({
 })
 
 type StructDeclareBase = { [key: string]: CType | StructCreator<any> }
-type ExtractStructCreator<Type> = Type extends StructCreator<infer X> ? X : never
-type StructObject<T extends StructDeclareBase> = { [K in keyof T]: T[K] extends CType ? TypeMap[T[K]] : Struct<ExtractStructCreator<T[K]>> }
+type StructObject<T extends StructDeclareBase> = { [K in keyof T]: NativeValue<T[K]> }
 
 export interface StructContent<T extends StructDeclareBase> {
   _buffer: Buffer

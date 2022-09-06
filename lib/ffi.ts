@@ -1,5 +1,5 @@
 import { Win64InvokerBuilder } from "./assembler/win64_invoker"
-import { NativeType } from "./c_types"
+import { CType, NativeType, NativeValue, TypeMap } from "./c_types"
 import { getSymbol } from "./utils"
 import bindings from 'bindings'
 import { Win64CallbackBuilder } from "./assembler/win64_callback"
@@ -18,8 +18,10 @@ export interface CFunction {
   
 export type FunctionExt<T> = { ptr: Buffer, rawFunction: T }
 
+type NativeInvoker<T extends CFunction> = (...args: unknown[]) => NativeValue<T['return']>
+
 const noop = () => {}
-export function createFunction<T extends Function = Function>(decl: CFunction): T & FunctionExt<T> {
+export function createFunction<T extends CFunction>(decl: T): NativeInvoker<T> & FunctionExt<T> {
   let symbolPtr: Buffer
   let fn: Function
   let builder: InvokerBuilder
@@ -58,7 +60,7 @@ export function createFunction<T extends Function = Function>(decl: CFunction): 
         }
       }
     },
-  }) as never as T & FunctionExt<T>
+  }) as NativeInvoker<T> & FunctionExt<T>
 }
 
 export interface CallbackCreator<T> {
