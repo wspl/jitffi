@@ -12,13 +12,6 @@ export class SystemVInvokerBuilder extends InvokerBuilder {
 
     const ARG_REG_INT = retAsArg ? ARG_REG_INT_RETURN_AS_ARG : ARG_REG_INT_GENERAL
 
-    // stack structure
-    // |                     |     callee addr     |
-    // |     extra arg 0     |     extra arg 1     |
-    // |           extra arg 2 (big struct)        |    // |     extra arg 2     |     extra arg 3     |
-    // |     extra arg 3     | align padding space |
-    // | fixed padding space |       fn addr       |
-
     // group args by target reg or stack
     const {
       intRegArgs,
@@ -30,7 +23,6 @@ export class SystemVInvokerBuilder extends InvokerBuilder {
       (i) => this.addressOfArg(i)
     )
 
-    const stackPadding = 8
     const stackForArguments = align16(
       stackArgs.reduce((s, t) => s + (t.size ? align8(t.size) : 8), 0)
     )
@@ -41,7 +33,7 @@ export class SystemVInvokerBuilder extends InvokerBuilder {
     asm.push({ r: Reg64.rbp })
     asm.mov({ r: Reg64.rbp }, { r: Reg64.rsp })
 
-    const stackStart = stackPadding + stackForArguments
+    const stackStart = stackForArguments
     asm.sub({ r: Reg64.rsp }, { n: stackStart })
 
     // mov args from buffer to reg or stack

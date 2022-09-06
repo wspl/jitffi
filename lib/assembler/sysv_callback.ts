@@ -13,16 +13,6 @@ export class SystemVCallbackBuilder extends CallbackBuilder {
     
     const ARG_REG_INT = retAsArg ? ARG_REG_INT_RETURN_AS_ARG : ARG_REG_INT_GENERAL
     
-    // stack structure:
-    // |                     |  call_callback addr |
-    //                      or
-    // |                     |      memcpy addr    |
-    //                      and
-    // | padding / rdi cache |    callback addr    |
-    // |     extra arg 0     |     extra arg 1     |
-    // |           extra arg 2 (big struct)        |
-    // |     extra arg 3     |                     |
-
     // group args by target reg or stack
     const {
       intRegArgs,
@@ -34,7 +24,7 @@ export class SystemVCallbackBuilder extends CallbackBuilder {
       (i) => this.addressOfArg(i)
     )
 
-    const stackPadding = 8
+    const stackPadding = 16
 
     const asm = new X64Assembler()
     
