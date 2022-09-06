@@ -2,12 +2,10 @@ import { Win64InvokerBuilder } from "./assembler/win64_invoker"
 import { NativeType } from "./c_types"
 import { getSymbol } from "./utils"
 import bindings from 'bindings'
-import { CallbackBuilder } from "./assembler/callback"
 import { Win64CallbackBuilder } from "./assembler/win64_callback"
 import { SystemVInvokerBuilder } from "./assembler/sysv_invoker"
-import fs from 'fs'
-import { execSync } from "child_process"
 import { SystemVCallbackBuilder } from "./assembler/sysv_callback"
+import { InvokerBuilder } from "./assembler/invoker"
 
 const addon = bindings('jitffi')
 
@@ -20,26 +18,47 @@ export interface CFunction {
   
 export type FunctionExt<T> = { ptr: Buffer, rawFunction: T }
 
+const noop = () => {}
 export function createFunction<T extends Function = Function>(decl: CFunction): T & FunctionExt<T> {
-  const fnPtr = getSymbol(decl.module, decl.name)
-  const builder = new (process.platform === 'win32' ? Win64InvokerBuilder : SystemVInvokerBuilder)(
-    decl.return,
-    decl.arguments,
-    fnPtr.readBigInt64()
-  )
-  const code = builder.build()
-  const ptr = addon.getExecutablePointer(code)
-  const fn = addon.makeJSFunction(ptr, decl.name)
-  const f = ((...args: any[]) => {
-    args.forEach((arg, i) => {
-      builder.data[`a${i}`] = arg
-    })
-    fn()
-    return Buffer.from(builder.data.ret)
+  let symbolPtr: Buffer
+  let fn: Function
+  let builder: InvokerBuilder
+
+  return new Proxy(noop, {
+    apply(_target, _thisArg, argArray) {
+      if (!fn) {
+        symbolPtr = getSymbol(decl.module, decl.name)
+        builder = new (process.platform === 'win32' ? Win64InvokerBuilder : SystemVInvokerBuilder)(
+          decl.return,
+          decl.arguments,
+          symbolPtr.readBigInt64()
+        )
+        const code = builder.build()
+        
+        const ptr = addon.getExecutablePointer(code)
+        fn = addon.makeJSFunction(ptr, decl.name)
+      }
+      argArray.forEach((arg, i) => {
+        builder.data[`a${i}`] = arg
+      })
+      fn()
+      if (builder.data.ret instanceof Buffer) {
+        return Buffer.from(builder.data.ret)
+      } else {
+        return builder.data.ret
+      }
+    },
+    get(_target, p, _receiver) {
+      switch (p) {
+        case 'ptr': {
+          return symbolPtr
+        }
+        case 'rawFunction': {
+          return fn
+        }
+      }
+    },
   }) as never as T & FunctionExt<T>
-  f.ptr = fnPtr
-  f.rawFunction = fn
-  return f;
 }
 
 export interface CallbackCreator<T> {
