@@ -35,7 +35,7 @@ export function createFunction<T extends Function = Function>(decl: CFunction): 
       builder.data[`a${i}`] = arg
     })
     fn()
-    return builder.data.ret
+    return Buffer.from(builder.data.ret)
   }) as never as T & FunctionExt<T>
   f.ptr = fnPtr
   f.rawFunction = fn

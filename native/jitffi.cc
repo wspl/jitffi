@@ -20,6 +20,27 @@ Napi::Function MakeJSFunction(const Napi::CallbackInfo &info) {
   return Napi::Function(info.Env(), f);
 }
 
+Napi::Buffer<char> LoadModule(const Napi::CallbackInfo &info) {
+  auto result = Napi::Object::New(info.Env());
+  
+  if (info[0].IsUndefined() || info[0].IsNull()) {
+#ifdef _WIN32
+    auto handle = GetModuleHandleA(NULL);
+#else
+    auto handle = dlopen(nullptr, RTLD_LAZY);
+#endif
+    return Napi::Buffer<char>::Copy(info.Env(), (char*)&handle, 8);
+  } else {
+    auto module = info[0].As<Napi::String>().Utf8Value();
+#ifdef _WIN32
+    auto handle = LoadLibraryA(module.c_str());
+#else
+    auto handle = dlopen(module.c_str(), RTLD_LAZY);
+#endif
+    return Napi::Buffer<char>::Copy(info.Env(), (char*)&handle, 8);
+  }
+}
+
 Napi::Buffer<char> GetSymbol(const Napi::CallbackInfo &info) {
   auto result = Napi::Object::New(info.Env());
   auto symbol = info[1].As<Napi::String>().Utf8Value();
@@ -93,6 +114,7 @@ Napi::Buffer<char> GetPrintf(const Napi::CallbackInfo &info) {
 
 Napi::Object Init(Napi::Env env, Napi::Object exports) {
   exports.Set("getSymbol", Napi::Function::New(env, GetSymbol));
+  exports.Set("loadModule", Napi::Function::New(env, LoadModule));
   exports.Set("makeJSFunction", Napi::Function::New(env, MakeJSFunction));
   exports.Set("getCallbackReference", Napi::Function::New(env, GetCallbackReference));
   exports.Set("getBufferPointer", Napi::Function::New(env, GetBufferPointer));
