@@ -117,8 +117,8 @@ const structGetterSetter = <T extends StructDeclareBase>(offset: number) => ({
   }
 })
 
-type StructDeclareBase = { [key: string]: CType | StructCreator<any> }
-type StructObject<T extends StructDeclareBase> = { [K in keyof T]: NativeValue<T[K]> }
+export type StructDeclareBase = { [key: string]: CType | StructCreator<any> }
+export type StructObject<T extends StructDeclareBase> = { [K in keyof T]: NativeValue<T[K]> }
 
 export interface StructContent<T extends StructDeclareBase> {
   _buffer: Buffer
@@ -130,6 +130,8 @@ export interface StructContent<T extends StructDeclareBase> {
 }
 
 export type Struct<T extends StructDeclareBase> = StructObject<T> & StructContent<T>
+export type StructOf<C extends StructCreator<any>> = C extends StructCreator<infer T> ? Struct<T> : unknown;
+
 
 export interface StructCreator<T extends StructDeclareBase> {
   new (initialValue?: Partial<StructObject<T>>): Struct<T>
@@ -160,13 +162,13 @@ export function defineStruct<T extends StructDeclareBase>(args: T): StructCreato
   // calculate field alignment
   const offsetMap: Record<string, number> = {}
   let offset = 0
-  const getNextOffset = () => offset - offset % Struct.alignment + Struct.alignment
+  const getNextOffset = () => offset - (offset % Struct.alignment) + Struct.alignment
 
   for (const [key, type] of Object.entries(args)) {
     const nextOffset = getNextOffset()
     const size = typeof type === 'number' ? CTypeSize[type] : type.size
 
-    if (offset !== 0 && offset + size > nextOffset) {
+    if (offset !== 0 && offset + size > nextOffset && (offset + size) % Struct.alignment > 0) {
       offsetMap[key] = nextOffset
       offset = nextOffset + size
     } else {
